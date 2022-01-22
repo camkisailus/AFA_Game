@@ -1,3 +1,8 @@
+# User
+record_data/
+videos/
+.DS_store
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

@@ -26,6 +26,7 @@ class Game():
         self.possible_actions = []
         self.font = pg.font.SysFont('comicsans', 24)
         self.action_graph = ag.ActionGraph()
+        self.object_count = 0
         
 
     
@@ -78,11 +79,12 @@ class Game():
                     for button in self.buttons:
                         if button.is_over(mouse_pos):
                             if button.click_action == 'add_spoon':
-                                spoon = shapes.Spoon(10, 10, SPOON_COLOR)
+                                spoon = shapes.Spoon(10, 10, SPOON_COLOR, self.object_count)
                                 self.add_scene_object(spoon)
                             elif button.click_action == 'add_bowl':
-                                bowl = shapes.Bowl(10, 10, BOWL_COLOR)
+                                bowl = shapes.Bowl(10, 10, BOWL_COLOR, self.object_count)
                                 self.add_scene_object(bowl)
+                            self.object_count+=1
                     for so in self.scene_objs:
                         if so.shape.is_over(mouse_pos):
                             if self.dragging_shape:

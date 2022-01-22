@@ -2,6 +2,7 @@ from calendar import c
 import pygame as pg
 import math
 import acf
+
 ACF_COLOR = (0,255,0)
 
 class Rectangle():
@@ -48,7 +49,7 @@ class Circle():
         return False
 
 class Spoon():
-    def __init__(self, left, top, color):
+    def __init__(self, left, top, color, id):
         self.left = left
         self.top = top
         self.circle = Circle(left, top, 15, color)
@@ -59,7 +60,7 @@ class Spoon():
         self.stir_acf = (self.circle.center_x, self.circle.center_y)
         self.stir_acf_circle = Circle(self.stir_acf[0], self.stir_acf[1], 5, ACF_COLOR)
         self.static = True
-        self.name = "Spoon"
+        self.name = "Spoon"+str(id)
         self.current_action = None
 
     def draw(self, win):
@@ -80,13 +81,13 @@ class Spoon():
         self.stir_acf = (x,y)
 
 class Bowl():
-    def __init__(self, center_x, center_y, color):
+    def __init__(self, center_x, center_y, color, id):
         self.center_x = center_x
         self.center_y = center_y
         self.circle = Circle(center_x, center_y, 30, color)
         self.contain_acf_circle = Circle(center_x, center_y, 10, ACF_COLOR)
         self.static = True
-        self.name = "Bowl"
+        self.name = "Bowl"+str(id)
         self.current_action = None
         self.acfs = [acf.ContainACF(center_x, center_y)]
     
