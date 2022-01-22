@@ -1,16 +1,18 @@
-from code import interact
-from lib2to3.pgen2.token import ISTERMINAL
 import actions
 from itertools import combinations
-
+import networkx as nx
+import matplotlib.pyplot as plt
+import os
 
 class Node():
     def __init__(self, state, parent= None, children=[]):
         self.state = state
         self.children = children
         self.parent = parent
-        if state.action.name == "Idle":
-            print("Created a root node with {} scene_objs".format(len(self.state.scene_objects)))
+        self.id = self.state.action.name
+        for obj in self.state.object_set:
+            self.id += "\n"+obj.shape.name
+        self.active = False
 
     
     def add_child(self, child):
@@ -73,32 +75,60 @@ class StateGenerator():
         for combo in self.get_combos(self.scene_objects):
             for action in self.known_actions:
                 if action.preconditions(combo):
-                    # print(action.name)
-                    # for item in combo:
-                    #     print(item)
                     new_state = SceneState(action, combo)
                     possible_states.append(new_state)
         return possible_states
 
-
+class GraphVisualizer():
+    def __init__(self, nodes, save_loc, count):
+        self.nodes = nodes
+        self.color_map = []
+        self.save_loc = save_loc
+        self.G = nx.DiGraph()
+        for node in self.nodes:
+            self.G.add_node(node.id)
+        for node in self.nodes:
+            for child in node.children:
+                self.G.add_edge(node.id, child.id)
+        self.show(count)
+    
+    def show(self, count):
+        self.color_map.clear()
+        fname = os.path.join(self.save_loc, "full_action_graph_{}".format(count))
+        for node in self.nodes:
+            if node.active:
+                self.color_map.append('green')
+            else:
+                self.color_map.append('blue')
+        nx.draw_networkx(self.G, node_color=self.color_map)
+        plt.show()
+        #plt.savefig(fname)
+        plt.clf() # clear fig
         
-
-
-
 
 class ActionGraph():
     def __init__(self, scene_objects=None):
         self.scene_objects = list(scene_objects) if scene_objects else []
         self.root = Node(SceneState(action=actions.Idle(), interacting_objects=[], other_objects=self.scene_objects))
+        self.root.active = True
         self.current_node = self.root
         self.sg = StateGenerator(scene_objects)
         self.undos = {"Place":"Grasp"}
+        self.nodes = []
+        self.save_loc = os.path.join(os.path.dirname(os.path.realpath(__file__)), "record_data")
+        self.count = 0
+        if not os.path.exists(self.save_loc):
+            os.mkdir(self.save_loc)
 
     def add_object(self, object):
+        self.nodes.clear()
         self.sg.add_object(object)
         self.possible_states = self.sg.generate_all_states()
         self.scene_objects.append(object)
         self.root = Node(SceneState(action=actions.Idle(), interacting_objects=[], other_objects=self.scene_objects))
+        self.current_node = self.root
+        self.root.active = True
+        self.nodes.append(self.root)
         self.construct_graph()
     
     def construct_graph(self):
@@ -106,19 +136,25 @@ class ActionGraph():
             if len(state.object_set) == 1:
                 new_node = Node(state, parent=self.root, children=[self.root])
                 self.root.add_child(new_node)
+                self.nodes.append(new_node)
             else:
+                # TODO (camkisailus): Implement logic here
                 print("Skipping until we know how to find primary object in multiple object action")
-    
+        self.graph_visualizer = GraphVisualizer(self.nodes, self.save_loc, self.count)
+        self.count += 1
+
     def check_states(self, scene_objs):
         if self.current_node.has_children():
             for child in self.current_node.children:
                 # check if any of the possible next actions have happened
                 if child.state.check():
                     print("State changed to {}!".format(child.state.action.name))
+                    self.current_node.active = False
+                    child.active = True
                     self.current_node = child
-
-
-
+                    self.graph_visualizer.show(self.count)
+                    self.count+=1
+                    
 
     
     def update_state(self, new_state):
